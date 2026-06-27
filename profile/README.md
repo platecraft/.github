@@ -16,8 +16,9 @@ PlateCraft is designed around a few core ideas:
 
 ## Core repositories
 
-- `recipe-meal-planner` — PlateCraft app development.
-- `platecraft-landing` — Public marketing site and external-facing pages.
+- `platecraft-platform` — structured platform, app, architecture, blueprints, domains, engines, database notes, ADRs, and implementation-facing documentation.
+- `platecraft-landing` — public marketing and documentation site for PlateCraft.app.
+- `platecraft-ai` — local-first AI framework, Engineering Agent tooling, provider abstractions, prompts, skills, and agent workflow documentation.
 
 ## Project direction
 
