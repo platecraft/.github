@@ -1,0 +1,62 @@
+# Reusable release-please workflow for PlateCraft repositories.
+# Standard: platecraft/platecraft-admin docs/organization/adrs/ADR-0004-versioning-and-release-standard.md
+#
+# Caller example (in the consuming repository):
+#
+#   on:
+#     push:
+#       branches: [main]
+#   permissions:
+#     contents: write
+#     pull-requests: write
+#   jobs:
+#     release-please:
+#       uses: platecraft/.github/.github/workflows/release-please.yml@<sha>
+#       with:
+#         target-branch: main
+#       secrets: inherit
+name: Release Please (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      target-branch:
+        description: Release branch release-please reads from and opens release PRs against.
+        type: string
+        required: true
+      config-file:
+        type: string
+        default: release-please-config.json
+      manifest-file:
+        type: string
+        default: .release-please-manifest.json
+    secrets:
+      RELEASE_PLEASE_TOKEN:
+        description: >-
+          Optional token (GitHub App or fine-grained PAT). When unset, GITHUB_TOKEN is used,
+          and release PRs opened with it do not trigger other workflows (required checks).
+        required: false
+    outputs:
+      releases_created:
+        value: ${{ jobs.release-please.outputs.releases_created }}
+      tag_name:
+        value: ${{ jobs.release-please.outputs.tag_name }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          target-branch: ${{ inputs.target-branch }}
+          config-file: ${{ inputs.config-file }}
+          manifest-file: ${{ inputs.manifest-file }}
