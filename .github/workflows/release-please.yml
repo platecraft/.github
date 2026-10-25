@@ -1,0 +1,66 @@
+# Reusable release-please workflow for PlateCraft repositories.
+# Standard: platecraft/platecraft-admin docs/organization/adrs/ADR-0004-versioning-and-release-standard.md
+#
+# Caller example (in the consuming repository):
+#
+#   on:
+#     push:
+#       branches: [main]
+#   permissions:
+#     contents: write
+#     pull-requests: write
+#   jobs:
+#     release-please:
+#       uses: platecraft/.github/.github/workflows/release-please.yml@<sha>
+#       with:
+#         target-branch: main
+#       secrets: inherit
+name: Release Please (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      target-branch:
+        description: Release branch release-please reads from and opens release PRs against.
+        type: string
+        required: true
+      config-file:
+        type: string
+        default: release-please-config.json
+      manifest-file:
+        type: string
+        default: .release-please-manifest.json
+    secrets:
+      RELEASE_APP_PRIVATE_KEY:
+        description: Private key of the PlateCraft Release GitHub App (org secret).
+        required: true
+    outputs:
+      releases_created:
+        value: ${{ jobs.release-please.outputs.releases_created }}
+      tag_name:
+        value: ${{ jobs.release-please.outputs.tag_name }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # A GitHub App token (not GITHUB_TOKEN) so release PRs trigger CI and required checks report.
+      - id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          target-branch: ${{ inputs.target-branch }}
+          config-file: ${{ inputs.config-file }}
+          manifest-file: ${{ inputs.manifest-file }}
