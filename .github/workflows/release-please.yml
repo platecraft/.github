@@ -31,11 +31,9 @@ on:
         type: string
         default: .release-please-manifest.json
     secrets:
-      RELEASE_PLEASE_TOKEN:
-        description: >-
-          Optional token (GitHub App or fine-grained PAT). When unset, GITHUB_TOKEN is used,
-          and release PRs opened with it do not trigger other workflows (required checks).
-        required: false
+      RELEASE_APP_PRIVATE_KEY:
+        description: Private key of the PlateCraft Release GitHub App (org secret).
+        required: true
     outputs:
       releases_created:
         value: ${{ jobs.release-please.outputs.releases_created }}
@@ -53,10 +51,16 @@ jobs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      # A GitHub App token (not GITHUB_TOKEN) so release PRs trigger CI and required checks report.
+      - id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ steps.app-token.outputs.token }}
           target-branch: ${{ inputs.target-branch }}
           config-file: ${{ inputs.config-file }}
           manifest-file: ${{ inputs.manifest-file }}
